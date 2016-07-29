@@ -159,7 +159,7 @@ def train_dcgan_labeled(gen, dis, epoch0=0):
     o_gen.add_hook(chainer.optimizer.WeightDecay(0.00001))
     o_dis.add_hook(chainer.optimizer.WeightDecay(0.00001))
 
-    zvis = (xp.random.uniform(-1, 1, (100, nz), dtype=np.float32))
+    zvis = (generate_rand(-1, 1, (100, nz), dtype=np.float32))
     
     for epoch in xrange(epoch0,n_epoch):
         perm = np.random.permutation(n_train)
@@ -188,15 +188,18 @@ def train_dcgan_labeled(gen, dis, epoch0=0):
             #print "load image done"
             
             # train generator
-            z = Variable(xp.random.uniform(-1, 1, (batchsize, nz), dtype=np.float32))
+            z = Variable(generate_rand(-1, 1, (batchsize, nz), dtype=np.float32))
             x = gen(z)
             yl = dis(x)
             L_gen = F.softmax_cross_entropy(yl, Variable(xp.zeros(batchsize, dtype=np.int32)))
             L_dis = F.softmax_cross_entropy(yl, Variable(xp.ones(batchsize, dtype=np.int32)))
             
             # train discriminator
-                    
-            x2 = Variable(cuda.to_gpu(x2))
+
+            global using_gpu
+            if using_gpu:
+              x2 = Variable(cuda.to_gpu(x2))
+
             yl2 = dis(x2)
             L_dis += F.softmax_cross_entropy(yl2, Variable(xp.zeros(batchsize, dtype=np.int32)))
             
@@ -220,7 +223,7 @@ def train_dcgan_labeled(gen, dis, epoch0=0):
                 pylab.clf()
                 vissize = 100
                 z = zvis
-                z[50:,:] = (xp.random.uniform(-1, 1, (50, nz), dtype=np.float32))
+                z[50:,:] = (generate_rand(-1, 1, (50, nz), dtype=np.float32))
                 z = Variable(z)
                 x = gen(z, test=True)
                 x = x.data.get()
@@ -238,18 +241,46 @@ def train_dcgan_labeled(gen, dis, epoch0=0):
         print 'epoch end', epoch, sum_l_gen/n_train, sum_l_dis/n_train
 
 
+def generate_rand(low, hight, size, dtype=np.float32):
+    global using_gpu
+    if using_gpu:
+        generated = xp.random.uniform(low, hight, size, dtype=dtype)
+    else:
+        generated = xp.random.uniform(low, hight, size, ).astype(dtype)
+    return generated
 
-xp = cuda.cupy
-cuda.get_device(0).use()
 
+#import argparse
+#parser = argparse.ArgumentParser()
+#parser.add_argument('--gpu', '-g', default=-1, type=int)
+#args = parser.parse_args()
+#xp = np if args.gpu < 0 else cuda.cupy
+
+using_gpu = False
+xp = np
+try:
+  cuda.check_cuda_available()
+  xp = cuda.cupy
+  cuda.get_device(0).use()
+  using_gpu = True
+except:
+   print  "I'm sorry. Using CPU."
+
+
+print  "Generating."
 gen = Generator()
+print  "Discriminating."
 dis = Discriminator()
-gen.to_gpu()
-dis.to_gpu()
+print  "End discriminator."
+if using_gpu:
+  gen.to_gpu()
+  dis.to_gpu()
 
 
 try:
+    print  "Make out_image_dir.."
     os.mkdir(out_image_dir)
+    print  "Make out_model_dir.."
     os.mkdir(out_model_dir)
 except:
     pass
