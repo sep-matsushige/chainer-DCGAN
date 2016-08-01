@@ -22,6 +22,8 @@ import chainer.links as L
 
 import numpy
 
+#from pprint import pprint
+
 
 image_dir = './images'
 out_image_dir = './out_images'
@@ -29,10 +31,14 @@ out_model_dir = './out_models'
 
 
 nz = 100          # # of dim for Z
-batchsize=100
-n_epoch=10000
-n_train=200000
-image_save_interval = 50000
+#batchsize=100
+batchsize=2
+#n_epoch=10000
+n_epoch=10
+#n_train=200000
+n_train=10
+#image_save_interval = 50000
+image_save_interval = 5
 
 # read all images
 
@@ -161,7 +167,7 @@ def train_dcgan_labeled(gen, dis, epoch0=0):
 
     zvis = (generate_rand(-1, 1, (100, nz), dtype=np.float32))
     
-    for epoch in xrange(epoch0,n_epoch):
+    for epoch in xrange(epoch0, n_epoch):
         perm = np.random.permutation(n_train)
         sum_l_dis = np.float32(0)
         sum_l_gen = np.float32(0)
@@ -193,7 +199,11 @@ def train_dcgan_labeled(gen, dis, epoch0=0):
             yl = dis(x)
             L_gen = F.softmax_cross_entropy(yl, Variable(xp.zeros(batchsize, dtype=np.int32)))
             L_dis = F.softmax_cross_entropy(yl, Variable(xp.ones(batchsize, dtype=np.int32)))
-            
+
+            #print("--- L_gen ---")
+            #pprint(L_gen.data)
+            #print("--- --- ---")
+
             # train discriminator
 
             global using_gpu
@@ -213,8 +223,10 @@ def train_dcgan_labeled(gen, dis, epoch0=0):
             L_dis.backward()
             o_dis.update()
             
-            sum_l_gen += L_gen.data.get()
-            sum_l_dis += L_dis.data.get()
+            #sum_l_gen += L_gen.data.get()
+            #sum_l_dis += L_dis.data.get()
+            sum_l_gen += L_gen.data
+            sum_l_dis += L_dis.data
             
             #print "backward done"
 
@@ -226,7 +238,8 @@ def train_dcgan_labeled(gen, dis, epoch0=0):
                 z[50:,:] = (generate_rand(-1, 1, (50, nz), dtype=np.float32))
                 z = Variable(z)
                 x = gen(z, test=True)
-                x = x.data.get()
+                #x = x.data.get()
+                x = x.data
                 for i_ in range(100):
                     tmp = ((np.vectorize(clip_img)(x[i_,:,:,:])+1)/2).transpose(1,2,0)
                     pylab.subplot(10,10,i_+1)
