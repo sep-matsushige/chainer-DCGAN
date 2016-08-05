@@ -24,7 +24,7 @@ import numpy
 
 nz = 100
 
-model_file = 'generator_model.h5'
+model_file = 'out_models/dcgan_model_gen_25.h5'
 out_file = 'output.png'
 
 class Generator(chainer.Chain):

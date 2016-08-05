@@ -30,15 +30,16 @@ out_image_dir = './out_images'
 out_model_dir = './out_models'
 
 
-nz = 100          # # of dim for Z
+#nz = 100          # # of dim for Z
+nz = 10          # # of dim for Z
 #batchsize=100
-batchsize=2
+batchsize=10
 #n_epoch=10000
-n_epoch=10
+n_epoch=100
 #n_train=200000
-n_train=10
+n_train=2000
 #image_save_interval = 50000
-image_save_interval = 5
+image_save_interval = 1000
 
 # read all images
 
